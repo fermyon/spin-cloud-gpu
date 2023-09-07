@@ -1,0 +1,15 @@
+spin_version = "1"
+authors = ["Caleb Schoepp <caleb.schoepp@fermyon.com>"]
+description = "TODO"
+name = "cloud-gpu"
+trigger = { type = "http", base = "/" }
+version = "0.1.0"
+
+[[component]]
+id = "cloud-gpu"
+source = "target/spin-http-js.wasm"
+exclude_files = ["**/node_modules"]
+[component.trigger]
+route = "/..."
+[component.build]
+command = "npm run build"

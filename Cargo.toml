@@ -1,0 +1,12 @@
+[package]
+name = "spin-cloud-gpu"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.44"
+clap = { version = "3.2.24", features = ["derive", "env"] }
+tracing = { version = "0.1", features = ["log"] }
+uuid = { version = "1.4.1", features = ["v4"]}
