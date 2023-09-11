@@ -9,6 +9,7 @@ version = "0.1.0"
 id = "cloud-gpu"
 source = "target/spin-http-js.wasm"
 exclude_files = ["**/node_modules"]
+ai_models = ["llama2-chat", "all-minilm-l6-v2", "codellama-instruct"]
 [component.trigger]
 route = "/..."
 [component.build]

@@ -1,4 +1,4 @@
-use clap::{Args, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use std::process::Command as Cmd;
 use uuid::Uuid;
 
@@ -42,7 +42,7 @@ fn init() -> Result<(), anyhow::Error> {
 
     println!(
         "{:?}",
-        &(std::env::current_dir()?.to_str().unwrap().to_owned() + "/spin.toml")
+        &(std::env::current_dir()?.to_str().unwrap().to_owned() + "/cloud-gpu-app/spin.toml")
     );
 
     // Get the parent directory of the current executable path
@@ -52,7 +52,7 @@ fn init() -> Result<(), anyhow::Error> {
         .to_str()
         .unwrap()
         .to_owned()
-        + "/spin.toml";
+        + "/cloud-gpu-app/spin.toml";
 
     println!("deploying cloud-gpu application");
     let deploy_result = Cmd::new(spin_bin_path)
@@ -60,7 +60,7 @@ fn init() -> Result<(), anyhow::Error> {
         .arg("-f")
         .arg(spin_toml_path)
         .output()?;
-    println!("{:?}", deploy_result);
+    println!("{}", String::from_utf8_lossy(&deploy_result.stdout));
 
     // Print instructions on how to put the access key in your environment
     Ok(())
