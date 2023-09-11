@@ -34,7 +34,7 @@ fn main() -> Result<(), anyhow::Error> {
 
 fn init() -> Result<(), anyhow::Error> {
     // Generate a unique access key
-    let _access_key = Uuid::new_v4().to_string();
+    let auth_token = Uuid::new_v4().to_string();
 
     // std::env::set_current_dir("cloud-gpu")?; // TODO: Eww
 
@@ -59,6 +59,57 @@ fn init() -> Result<(), anyhow::Error> {
         .arg("deploy")
         .arg("-f")
         .arg(spin_toml_path)
+        .arg("--variable")
+        .arg(format!("auth_token={auth_token}"))
+        .output()?;
+    println!("{}", String::from_utf8_lossy(&deploy_result.stdout));
+
+    println!("export asdf={auth_token}");
+
+    // Print instructions on how to put the access key in your environment
+    Ok(())
+}
+
+fn connect() -> Result<(), anyhow::Error> {
+    let auth_token = Uuid::new_v4().to_string();
+
+    let spin_bin_path = std::env::var("SPIN_BIN_PATH")?; // TODO: Put in constant
+
+    // Get the parent directory of the current executable path
+    let spin_toml_path = std::env::current_exe()?
+        .parent()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_owned()
+        + "/cloud-gpu-app/spin.toml";
+
+    println!("updating fermyon-cloud-gpu config");
+    let deploy_result = Cmd::new(spin_bin_path)
+        .arg("cloud")
+        .arg("variables")
+        .arg("set")
+        .arg(format!("auth_token={auth_token}"))
+        .arg("--app")
+        .arg("fermyon-cloud-gpu")
+        .output()?;
+    println!("{}", String::from_utf8_lossy(&deploy_result.stdout));
+
+    println!("export asdf={auth_token}");
+
+    // Print instructions on how to put the access key in your environment
+    Ok(())
+}
+
+fn destroy() -> Result<(), anyhow::Error> {
+    let spin_bin_path = std::env::var("SPIN_BIN_PATH")?; // TODO: Put in constant
+
+    println!("updating fermyon-cloud-gpu config");
+    let deploy_result = Cmd::new(spin_bin_path)
+        .arg("cloud")
+        .arg("apps")
+        .arg("delete")
+        .arg("fermyon-cloud-gpu")
         .output()?;
     println!("{}", String::from_utf8_lossy(&deploy_result.stdout));
 
@@ -66,15 +117,4 @@ fn init() -> Result<(), anyhow::Error> {
     Ok(())
 }
 
-fn connect() -> Result<(), anyhow::Error> {
-    println!("connect");
-
-    // TODO: Huh, idk...
-    Ok(())
-}
-
-fn destroy() -> Result<(), anyhow::Error> {
-    println!("destroy");
-    // Destroy the cloud-gpu application
-    Ok(())
-}
+// TODO: Actually confirm running command didn't blow up

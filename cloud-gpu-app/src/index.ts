@@ -8,7 +8,7 @@ import {
   Router,
 } from "@fermyon/spin-sdk";
 
-function validateRequest(headers: Record<string, string>): boolean {
+function isValidRequest(headers: Record<string, string>): boolean {
   if (headers["authorization"] === `bearer ${Config.get("auth_token")}`) {
     return true;
   }
@@ -22,7 +22,12 @@ interface InferenceParams {
 }
 
 function infer(data: HttpRequest): HttpResponse {
-  validateRequest(data.headers);
+  if (!isValidRequest(data.headers)) {
+    return {
+      status: 403,
+      body: "Please provide valid authorization header",
+    };
+  }
   let params = data.json() as InferenceParams;
   let response = Llm.infer(params.model, params.prompt, params.options);
 
@@ -39,7 +44,12 @@ interface EmbeddingParams {
 }
 
 function embed(data: HttpRequest): HttpResponse {
-  validateRequest(data.headers);
+  if (!isValidRequest(data.headers)) {
+    return {
+      status: 403,
+      body: "Please provide valid authorization header",
+    };
+  }
   let params = data.json() as EmbeddingParams;
   let response = Llm.generateEmbeddings(params.model, params.input);
   return {
@@ -50,10 +60,10 @@ function embed(data: HttpRequest): HttpResponse {
 }
 
 let router = Router();
-router.get("/infer", (_, req) => {
+router.post("/infer", (_, req) => {
   return infer(req);
 });
-router.get("/embedd", (_, req) => {
+router.post("/embed", (_, req) => {
   return embed(req);
 });
 

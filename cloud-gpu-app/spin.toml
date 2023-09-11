@@ -1,9 +1,12 @@
 spin_version = "1"
 authors = ["Caleb Schoepp <caleb.schoepp@fermyon.com>"]
 description = "TODO"
-name = "cloud-gpu"
+name = "fermyon-cloud-gpu"
 trigger = { type = "http", base = "/" }
 version = "0.1.0"
+
+[variables]
+auth_token = { required = true }
 
 [[component]]
 id = "cloud-gpu"
@@ -14,3 +17,5 @@ ai_models = ["llama2-chat", "all-minilm-l6-v2", "codellama-instruct"]
 route = "/..."
 [component.build]
 command = "npm run build"
+[component.config]
+auth_token = "{{ auth_token }}"

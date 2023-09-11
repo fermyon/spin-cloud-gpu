@@ -1,6 +1,10 @@
 #!/bin/bash
 
 cargo build --release
+cd cloud-gpu-app
+npm i
+spin build
+cd ..
 cp target/release/spin-cloud-gpu cloud-gpu 
 tar -czvf cloud-gpu.tar.gz cloud-gpu cloud-gpu-app/spin.toml cloud-gpu-app/target/spin-http-js.wasm
 
