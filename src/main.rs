@@ -1,91 +1,68 @@
-use clap::{Parser, Subcommand};
+use anyhow::{anyhow, Result};
+use clap::Parser;
 use std::process::Command as Cmd;
 use uuid::Uuid;
 
-/// TODO: Document
-#[derive(Debug, Parser)]
-#[clap(name = "spin-cloud-gpu", version)]
-pub struct App {
-    #[clap(subcommand)]
-    command: Command,
-}
+/// Returns build information, similar to: 0.1.0 (2be4034 2022-03-31).
+const VERSION: &str = concat!(
+    env!("CARGO_PKG_VERSION"),
+    " (",
+    env!("VERGEN_GIT_SHA"),
+    " ",
+    env!("VERGEN_GIT_COMMIT_DATE"),
+    ")"
+);
 
-#[derive(Debug, Subcommand)]
-enum Command {
-    // TODO: Document all
+#[derive(Debug, Parser)]
+#[clap(name = "spin cloud-gpu", version = VERSION)]
+pub enum App {
+    /// Deploy the fermyon-cloud-gpu Spin app to act as a cloud GPU proxy.
     Init,
+    /// Create credentials to connect to the fermyon-cloud-gpu Spin app.
     Connect,
+    /// Destroy the fermyon-cloud-gpu Spin app.
     Destroy,
 }
 
 fn main() -> Result<(), anyhow::Error> {
-    // tracing_subscriber::fmt()
-    //     .with_writer(std::io::stderr)
-    //     .with_ansi(std::io::stderr().is_terminal())
-    //     .init();
-
-    let app = App::parse();
-    match app.command {
-        Command::Init => init(),
-        Command::Connect => connect(),
-        Command::Destroy => destroy(),
+    match App::parse() {
+        App::Init => init(),
+        App::Connect => connect(),
+        App::Destroy => destroy(),
     }
 }
 
 fn init() -> Result<(), anyhow::Error> {
-    // Generate a unique access key
-    let auth_token = Uuid::new_v4().to_string();
+    println!("Deploying fermyon-cloud-gpu Spin app ...");
 
-    // std::env::set_current_dir("cloud-gpu")?; // TODO: Eww
+    let auth_token = generate_auth_token();
 
-    let spin_bin_path = std::env::var("SPIN_BIN_PATH")?; // TODO: Put in constant
-
-    println!(
-        "{:?}",
-        &(std::env::current_dir()?.to_str().unwrap().to_owned() + "/cloud-gpu-app/spin.toml")
-    );
-
-    // Get the parent directory of the current executable path
-    let spin_toml_path = std::env::current_exe()?
-        .parent()
-        .unwrap()
-        .to_str()
-        .unwrap()
-        .to_owned()
-        + "/cloud-gpu-app/spin.toml";
-
-    println!("deploying cloud-gpu application");
-    let deploy_result = Cmd::new(spin_bin_path)
+    let result = Cmd::new(spin_bin_path()?)
         .arg("deploy")
         .arg("-f")
-        .arg(spin_toml_path)
+        .arg(spin_toml_path()?)
         .arg("--variable")
         .arg(format!("auth_token={auth_token}"))
         .output()?;
-    println!("{}", String::from_utf8_lossy(&deploy_result.stdout));
 
-    println!("export asdf={auth_token}");
+    if !result.status.success() {
+        return Err(anyhow!(
+            "Failed to deploy fermyon-cloud-gpu: {}",
+            String::from_utf8_lossy(&result.stderr)
+        ));
+    }
 
-    // Print instructions on how to put the access key in your environment
+    show_how_to_configure(auth_token);
+
     Ok(())
 }
 
 fn connect() -> Result<(), anyhow::Error> {
-    let auth_token = Uuid::new_v4().to_string();
+    println!("Connecting to fermyon-cloud-gpu Spin app ...");
 
-    let spin_bin_path = std::env::var("SPIN_BIN_PATH")?; // TODO: Put in constant
+    let auth_token = generate_auth_token();
 
-    // Get the parent directory of the current executable path
-    let spin_toml_path = std::env::current_exe()?
-        .parent()
-        .unwrap()
-        .to_str()
-        .unwrap()
-        .to_owned()
-        + "/cloud-gpu-app/spin.toml";
-
-    println!("updating fermyon-cloud-gpu config");
-    let deploy_result = Cmd::new(spin_bin_path)
+    let result = Cmd::new(spin_bin_path()?)
         .arg("cloud")
         .arg("variables")
         .arg("set")
@@ -93,28 +70,59 @@ fn connect() -> Result<(), anyhow::Error> {
         .arg("--app")
         .arg("fermyon-cloud-gpu")
         .output()?;
-    println!("{}", String::from_utf8_lossy(&deploy_result.stdout));
 
-    println!("export asdf={auth_token}");
+    if !result.status.success() {
+        return Err(anyhow!(
+            "Failed to update auth_token in fermyon-cloud-gpu: {}",
+            String::from_utf8_lossy(&result.stderr)
+        ));
+    }
 
-    // Print instructions on how to put the access key in your environment
+    show_how_to_configure(auth_token);
+
     Ok(())
 }
 
 fn destroy() -> Result<(), anyhow::Error> {
-    let spin_bin_path = std::env::var("SPIN_BIN_PATH")?; // TODO: Put in constant
+    println!("Destroying fermyon-cloud-gpu Spin app ...");
 
-    println!("updating fermyon-cloud-gpu config");
-    let deploy_result = Cmd::new(spin_bin_path)
+    let result = Cmd::new(spin_bin_path()?)
         .arg("cloud")
         .arg("apps")
         .arg("delete")
         .arg("fermyon-cloud-gpu")
         .output()?;
-    println!("{}", String::from_utf8_lossy(&deploy_result.stdout));
 
-    // Print instructions on how to put the access key in your environment
+    if !result.status.success() {
+        return Err(anyhow!(
+            "Failed to delete fermyon-cloud-gpu: {}",
+            String::from_utf8_lossy(&result.stderr)
+        ));
+    }
+
     Ok(())
 }
 
-// TODO: Actually confirm running command didn't blow up
+fn generate_auth_token() -> String {
+    Uuid::new_v4().to_string()
+}
+
+fn spin_bin_path() -> Result<String> {
+    Ok(std::env::var("SPIN_BIN_PATH")?)
+}
+
+/// Returns the path to the spin.toml file of the fermyon-cloud-gpu Spin app.
+fn spin_toml_path() -> Result<String> {
+    Ok(std::env::current_exe()?
+        .parent()
+        .unwrap()
+        .to_str()
+        .ok_or(anyhow!("Could not get parent dir of executable"))?
+        .to_owned()
+        + "/fermyon-cloud-gpu/spin.toml")
+}
+
+fn show_how_to_configure(auth_token: String) {
+    println!("Run the following command in your shell:");
+    println!("export SPIN_CLOUD_GPU_AUTH_TOKEN={auth_token}");
+}
