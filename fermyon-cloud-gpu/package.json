@@ -1,7 +1,7 @@
 {
-  "name": "cloud-gpu",
+  "name": "fermyon-cloud-gpu",
   "version": "1.0.0",
-  "description": "TODO",
+  "description": "Proxies inferencing and embedding requests to the Fermyon Cloud Serverless AI feature for faster local development.",
   "main": "index.js",
   "scripts": {
     "build": "npx webpack --mode=production && mkdir -p target && spin js2wasm -o target/spin-http-js.wasm dist/spin.js",
