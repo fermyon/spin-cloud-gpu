@@ -52,7 +52,7 @@ fn init() -> Result<(), anyhow::Error> {
         ));
     }
 
-    show_how_to_configure(auth_token);
+    print_runtime_config(auth_token);
 
     Ok(())
 }
@@ -78,7 +78,7 @@ fn connect() -> Result<(), anyhow::Error> {
         ));
     }
 
-    show_how_to_configure(auth_token);
+    print_runtime_config(auth_token);
 
     Ok(())
 }
@@ -122,7 +122,16 @@ fn spin_toml_path() -> Result<String> {
         + "/fermyon-cloud-gpu/spin.toml")
 }
 
-fn show_how_to_configure(auth_token: String) {
-    println!("Run the following command in your shell:");
-    println!("export SPIN_CLOUD_GPU_AUTH_TOKEN={auth_token}");
+fn print_runtime_config(auth_token: String) {
+    println!("Add the following configuration to your runtime configuration file.");
+    println!("You'll need replace <URL> with the URL of your fermyon-cloud-gpu Spin app.");
+    println!("You can find the URL in the Cloud dashboard.");
+    println!(
+        r#"
+[llm_compute]
+type = "http"
+url = "<URL>"
+auth_token = "{auth_token}"
+    "#
+    );
 }
