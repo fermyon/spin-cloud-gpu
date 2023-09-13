@@ -1,0 +1,190 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+
+  build:
+    name: Build cloud-gpu plugin
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {
+              os: "ubuntu-latest",
+              arch: "amd64",
+              extension: "",
+              buildArgs: "",
+              target: "",
+              targetDir: "target/release",
+            }
+          - {
+            os: "ubuntu-latest",
+            arch: "aarch64",
+            extension: "",
+            buildArgs: "--target aarch64-unknown-linux-gnu",
+            target: "aarch64-unknown-linux-gnu",
+            targetDir: "target/aarch64-unknown-linux-gnu/release",
+          }
+          - {
+              os: "macos-latest",
+              arch: "amd64",
+              extension: "",
+              buildArgs: "",
+              target: "",
+              targetDir: "target/release",
+            }
+          - {
+              os: "macos-latest",
+              arch: "aarch64",
+              extension: "",
+              buildArgs: "--target aarch64-apple-darwin",
+              target: "aarch64-apple-darwin",
+              targetDir: "target/aarch64-apple-darwin/release/",
+            }
+          - {
+              os: "windows-latest",
+              arch: "amd64",
+              extension: ".exe",
+              buildArgs: "",
+              target: "",
+              targetDir: "target/release",
+            }
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install latest Rust stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          default: true
+          target: ${{ matrix.config.target }}
+
+      - name: set the release version (main)
+        shell: bash
+        run: echo "RELEASE_VERSION=canary" >> $GITHUB_ENV
+
+      - name: set the release version (tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: echo "RELEASE_VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
+      - name: lowercase the runner OS name
+        shell: bash
+        run: |
+          OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+          echo "RUNNER_OS=$OS" >> $GITHUB_ENV
+      
+      - name: setup for cross-compiled linux aarch64 build
+        if: matrix.config.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt update
+          sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          echo '[target.aarch64-unknown-linux-gnu]' >> ${HOME}/.cargo/config.toml
+          echo 'linker = "aarch64-linux-gnu-gcc"' >> ${HOME}/.cargo/config.toml
+
+      - name: Build cloud-gpu plugin
+        shell: bash
+        run: |
+          cargo build --release ${{ matrix.config.buildArgs }}
+
+      - name: Package as plugins tar
+        shell: bash
+        run: |
+          mkdir -v _dist
+          cp ${{ matrix.config.targetDir }}/spin-cloud-gpu${{ matrix.config.extension }} _dist/cloud-gpu${{ matrix.config.extension }}
+          cp  LICENSE _dist/cloud-gpu.license
+          cd _dist 
+          tar czf cloud-gpu-${{ env.RELEASE_VERSION }}-${{ env.RUNNER_OS }}-${{ matrix.config.arch }}.tar.gz cloud-gpu.license cloud-gpu${{ matrix.config.extension }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
+        with:
+            name: cloud-gpu-${{ env.RELEASE_VERSION }}-${{ env.RUNNER_OS }}-${{ matrix.config.arch }}.tar.gz
+            path: _dist/cloud-gpu-${{ env.RELEASE_VERSION }}-${{ env.RUNNER_OS }}-${{ matrix.config.arch }}.tar.gz
+
+  checksums_and_manifests:
+    name: generate checksums
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+
+      - uses: actions/checkout@v3
+      - name: set the release version (main)
+        shell: bash
+        run: echo "RELEASE_VERSION=canary" >> $GITHUB_ENV
+
+      - name: set the release version (tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: echo "RELEASE_VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
+      - name: download release assets
+        uses: actions/download-artifact@v3
+
+      - name: generate checksums
+        run: |
+          ls -lh
+          sha256sum cloud-gpu*.tar.gz/cloud-gpu*.tar.gz > checksums-${{ env.RELEASE_VERSION }}.txt
+
+      - name: create plugin manifest
+        shell: bash
+        run: bash .plugin-manifests/generate-manifest.sh ${{ env.RELEASE_VERSION }} checksums-${{ env.RELEASE_VERSION }}.txt > cloud-gpu.json
+
+      - name: Upload checksums
+        uses: actions/upload-artifact@v3
+        with:
+          name: cloud-gpu.json
+          path: cloud-gpu.json
+
+      - name: Upload plugin manifest
+        uses: actions/upload-artifact@v3
+        with:
+            name: checksums-${{ env.RELEASE_VERSION }}.txt
+            path: checksums-${{ env.RELEASE_VERSION }}.txt
+
+
+  update-canary:
+    name: update canary release
+    runs-on: ubuntu-latest
+    needs: checksums_and_manifests
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Download release assets
+        uses: actions/download-artifact@v3
+
+      - name: Delete canary tag
+        uses: dev-drprasad/delete-tag-and-release@v0.2.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: canary
+          delete_release: true
+
+      - name: Recreate canary tag and release
+        uses: rajatjindal/release-action@v0.0.1
+        with:
+          tag: canary
+          allowUpdates: true
+          prerelease: true
+          artifacts: "cloud-gpu.json/cloud-gpu.json,checksum*/*,cloud-gpu*/cloud-gpu*"
+          commit: ${{ github.sha }}
+          body: |
+            This is a "canary" release of the most recent commits on our main branch. Canary is **not stable**.
+            It is only intended for developers wishing to try out the latest features in the spin-cloud-gpu plugin
+
+      
+
+      
+
+ 
