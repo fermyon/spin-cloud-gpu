@@ -42,31 +42,31 @@ cat <<EOF
     {
       "os": "linux",
       "arch": "amd64",
-      "url": "https://github.com/karthik2804/spin-cloud-gpu/releases/download/${PLUGIN_BINARY_VERSION_STRING}/cloud-gpu-${PLUGIN_BINARY_VERSION_STRING}-linux-amd64.tar.gz",
+      "url": "https://github.com/fermyon/spin-cloud-gpu/releases/download/${PLUGIN_BINARY_VERSION_STRING}/cloud-gpu-${PLUGIN_BINARY_VERSION_STRING}-linux-amd64.tar.gz",
       "sha256": "${LINUX_AMD}"
     },
     {
       "os": "linux",
       "arch": "aarch64",
-      "url": "https://github.com/karthik2804/spin-cloud-gpu/releases/download/${PLUGIN_BINARY_VERSION_STRING}/cloud-gpu-${PLUGIN_BINARY_VERSION_STRING}-linux-aarch64.tar.gz",
+      "url": "https://github.com/fermyon/spin-cloud-gpu/releases/download/${PLUGIN_BINARY_VERSION_STRING}/cloud-gpu-${PLUGIN_BINARY_VERSION_STRING}-linux-aarch64.tar.gz",
       "sha256": "${LINUX_ARM}"
     },
     {
       "os": "macos",
       "arch": "aarch64",
-      "url": "https://github.com/karthik2804/spin-cloud-gpu/releases/download/${PLUGIN_BINARY_VERSION_STRING}/cloud-gpu-${PLUGIN_BINARY_VERSION_STRING}-macos-aarch64.tar.gz",
+      "url": "https://github.com/fermyon/spin-cloud-gpu/releases/download/${PLUGIN_BINARY_VERSION_STRING}/cloud-gpu-${PLUGIN_BINARY_VERSION_STRING}-macos-aarch64.tar.gz",
       "sha256": "${MAC_ARM}"
     },
     {
       "os": "macos",
       "arch": "amd64",
-      "url": "https://github.com/karthik2804/spin-cloud-gpu/releases/download/${PLUGIN_BINARY_VERSION_STRING}/cloud-gpu-${PLUGIN_BINARY_VERSION_STRING}-macos-amd64.tar.gz",
+      "url": "https://github.com/fermyon/spin-cloud-gpu/releases/download/${PLUGIN_BINARY_VERSION_STRING}/cloud-gpu-${PLUGIN_BINARY_VERSION_STRING}-macos-amd64.tar.gz",
       "sha256": "${MAC_AMD}"
     },
     {
       "os": "windows",
       "arch": "amd64",
-      "url": "https://github.com/karthik2804/spin-cloud-gpu/releases/download/${PLUGIN_BINARY_VERSION_STRING}/cloud-gpu-${PLUGIN_BINARY_VERSION_STRING}-windows-amd64.tar.gz",
+      "url": "https://github.com/fermyon/spin-cloud-gpu/releases/download/${PLUGIN_BINARY_VERSION_STRING}/cloud-gpu-${PLUGIN_BINARY_VERSION_STRING}-windows-amd64.tar.gz",
       "sha256": "${WINDOWS_AMD}"
     }
   ]
