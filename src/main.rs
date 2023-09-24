@@ -19,7 +19,7 @@ pub enum App {
     /// Deploy the fermyon-cloud-gpu Spin app to act as a cloud GPU proxy.
     Init,
     /// Create credentials to connect to the fermyon-cloud-gpu Spin app.
-    Connect,
+    // Connect,
     /// Destroy the fermyon-cloud-gpu Spin app.
     Destroy,
 }
@@ -27,7 +27,7 @@ pub enum App {
 fn main() -> Result<(), anyhow::Error> {
     match App::parse() {
         App::Init => init(),
-        App::Connect => connect(),
+        // App::Connect => connect(),
         App::Destroy => destroy(),
     }
 }
@@ -57,31 +57,31 @@ fn init() -> Result<(), anyhow::Error> {
     Ok(())
 }
 
-fn connect() -> Result<(), anyhow::Error> {
-    println!("Connecting to fermyon-cloud-gpu Spin app ...");
+// fn connect() -> Result<(), anyhow::Error> {
+//     println!("Connecting to fermyon-cloud-gpu Spin app ...");
 
-    let auth_token = generate_auth_token();
+//     let auth_token = generate_auth_token();
 
-    let result = Cmd::new(spin_bin_path()?)
-        .arg("cloud")
-        .arg("variables")
-        .arg("set")
-        .arg(format!("auth_token={auth_token}"))
-        .arg("--app")
-        .arg("fermyon-cloud-gpu")
-        .output()?;
+//     let result = Cmd::new(spin_bin_path()?)
+//         .arg("cloud")
+//         .arg("variables")
+//         .arg("set")
+//         .arg(format!("auth_token={auth_token}"))
+//         .arg("--app")
+//         .arg("fermyon-cloud-gpu")
+//         .output()?;
 
-    if !result.status.success() {
-        return Err(anyhow!(
-            "Failed to update auth_token in fermyon-cloud-gpu: {}",
-            String::from_utf8_lossy(&result.stderr)
-        ));
-    }
+//     if !result.status.success() {
+//         return Err(anyhow!(
+//             "Failed to update auth_token in fermyon-cloud-gpu: {}",
+//             String::from_utf8_lossy(&result.stderr)
+//         ));
+//     }
 
-    print_runtime_config(auth_token);
+//     print_runtime_config(auth_token);
 
-    Ok(())
-}
+//     Ok(())
+// }
 
 fn destroy() -> Result<(), anyhow::Error> {
     println!("Destroying fermyon-cloud-gpu Spin app ...");
@@ -129,7 +129,7 @@ fn print_runtime_config(auth_token: String) {
     println!(
         r#"
 [llm_compute]
-type = "http"
+type = "remote_http"
 url = "<URL>"
 auth_token = "{auth_token}"
     "#
