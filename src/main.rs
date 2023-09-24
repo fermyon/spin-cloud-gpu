@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Result};
 use clap::Parser;
+use regex::Regex;
 use std::process::Command as Cmd;
 use uuid::Uuid;
 
@@ -52,7 +53,12 @@ fn init() -> Result<(), anyhow::Error> {
         ));
     }
 
-    print_runtime_config(auth_token);
+    let url = match extract_url(&String::from_utf8_lossy(&result.stdout)) {
+        Ok(val) => val,
+        Err(_) => "<Insert url from cloud dashboard>".to_owned(),
+    };
+
+    print_runtime_config(url, auth_token);
 
     Ok(())
 }
@@ -122,16 +128,24 @@ fn spin_toml_path() -> Result<String> {
         + "/fermyon-cloud-gpu/spin.toml")
 }
 
-fn print_runtime_config(auth_token: String) {
+fn print_runtime_config(url: String, auth_token: String) {
     println!("Add the following configuration to your runtime configuration file.");
-    println!("You'll need replace <URL> with the URL of your fermyon-cloud-gpu Spin app.");
-    println!("You can find the URL in the Cloud dashboard.");
     println!(
         r#"
 [llm_compute]
 type = "remote_http"
-url = "<URL>"
+url = "{url}"
 auth_token = "{auth_token}"
-    "#
+"#
     );
+    println!("\nOnce added, you can spin up with the following argument --runtime-config-file <path/to/runtime/config>.");
+}
+
+fn extract_url(input: &str) -> Result<String> {
+    let re = Regex::new(r"fermyon-cloud-gpu: (https://[^\s]+)")?;
+    if let Some(captures) = re.captures(input) {
+        Ok(captures[1].to_string())
+    } else {
+        Err(anyhow!("Failed to extra url"))
+    }
 }
