@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Result};
 use clap::Parser;
+use regex::Regex;
 use std::process::Command as Cmd;
 use uuid::Uuid;
 
@@ -19,7 +20,7 @@ pub enum App {
     /// Deploy the fermyon-cloud-gpu Spin app to act as a cloud GPU proxy.
     Init,
     /// Create credentials to connect to the fermyon-cloud-gpu Spin app.
-    Connect,
+    // Connect,
     /// Destroy the fermyon-cloud-gpu Spin app.
     Destroy,
 }
@@ -27,7 +28,7 @@ pub enum App {
 fn main() -> Result<(), anyhow::Error> {
     match App::parse() {
         App::Init => init(),
-        App::Connect => connect(),
+        // App::Connect => connect(),
         App::Destroy => destroy(),
     }
 }
@@ -52,36 +53,41 @@ fn init() -> Result<(), anyhow::Error> {
         ));
     }
 
-    print_runtime_config(auth_token);
+    let url = match extract_url(&String::from_utf8_lossy(&result.stdout)) {
+        Ok(val) => val,
+        Err(_) => "<Insert url from cloud dashboard>".to_owned(),
+    };
+
+    print_runtime_config(url, auth_token);
 
     Ok(())
 }
 
-fn connect() -> Result<(), anyhow::Error> {
-    println!("Connecting to fermyon-cloud-gpu Spin app ...");
+// fn connect() -> Result<(), anyhow::Error> {
+//     println!("Connecting to fermyon-cloud-gpu Spin app ...");
 
-    let auth_token = generate_auth_token();
+//     let auth_token = generate_auth_token();
 
-    let result = Cmd::new(spin_bin_path()?)
-        .arg("cloud")
-        .arg("variables")
-        .arg("set")
-        .arg(format!("auth_token={auth_token}"))
-        .arg("--app")
-        .arg("fermyon-cloud-gpu")
-        .output()?;
+//     let result = Cmd::new(spin_bin_path()?)
+//         .arg("cloud")
+//         .arg("variables")
+//         .arg("set")
+//         .arg(format!("auth_token={auth_token}"))
+//         .arg("--app")
+//         .arg("fermyon-cloud-gpu")
+//         .output()?;
 
-    if !result.status.success() {
-        return Err(anyhow!(
-            "Failed to update auth_token in fermyon-cloud-gpu: {}",
-            String::from_utf8_lossy(&result.stderr)
-        ));
-    }
+//     if !result.status.success() {
+//         return Err(anyhow!(
+//             "Failed to update auth_token in fermyon-cloud-gpu: {}",
+//             String::from_utf8_lossy(&result.stderr)
+//         ));
+//     }
 
-    print_runtime_config(auth_token);
+//     print_runtime_config(auth_token);
 
-    Ok(())
-}
+//     Ok(())
+// }
 
 fn destroy() -> Result<(), anyhow::Error> {
     println!("Destroying fermyon-cloud-gpu Spin app ...");
@@ -122,16 +128,24 @@ fn spin_toml_path() -> Result<String> {
         + "/fermyon-cloud-gpu/spin.toml")
 }
 
-fn print_runtime_config(auth_token: String) {
+fn print_runtime_config(url: String, auth_token: String) {
     println!("Add the following configuration to your runtime configuration file.");
-    println!("You'll need replace <URL> with the URL of your fermyon-cloud-gpu Spin app.");
-    println!("You can find the URL in the Cloud dashboard.");
     println!(
         r#"
 [llm_compute]
-type = "http"
-url = "<URL>"
+type = "remote_http"
+url = "{url}"
 auth_token = "{auth_token}"
-    "#
+"#
     );
+    println!("\nOnce added, you can spin up with the following argument --runtime-config-file <path/to/runtime/config>.");
+}
+
+fn extract_url(input: &str) -> Result<String> {
+    let re = Regex::new(r"fermyon-cloud-gpu: (https://[^\s]+)")?;
+    if let Some(captures) = re.captures(input) {
+        Ok(captures[1].to_string())
+    } else {
+        Err(anyhow!("Failed to extra url"))
+    }
 }
