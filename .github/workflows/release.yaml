@@ -70,6 +70,18 @@ jobs:
           default: true
           target: ${{ matrix.config.target }}
 
+      - name: Install Spin
+        uses: fermyon/actions/spin/setup@v1
+        with:
+          plugins: js2wasm
+
+      - name: build fermyon-cloud-gpu
+        shell: bash
+        run: |
+          cd fermyon-cloud-gpu
+          npm install
+          spin build
+
       - name: set the release version (main)
         shell: bash
         run: echo "RELEASE_VERSION=canary" >> $GITHUB_ENV
@@ -101,11 +113,13 @@ jobs:
       - name: Package as plugins tar
         shell: bash
         run: |
-          mkdir -v _dist
+          mkdir -v -p _dist/fermyon-cloud-gpu/target
           cp ${{ matrix.config.targetDir }}/spin-cloud-gpu${{ matrix.config.extension }} _dist/cloud-gpu${{ matrix.config.extension }}
           cp  LICENSE _dist/cloud-gpu.license
-          cd _dist 
-          tar czf cloud-gpu-${{ env.RELEASE_VERSION }}-${{ env.RUNNER_OS }}-${{ matrix.config.arch }}.tar.gz cloud-gpu.license cloud-gpu${{ matrix.config.extension }}
+          cp fermyon-cloud-gpu/spin.toml _dist/fermyon-cloud-gpu/spin.toml
+          cp fermyon-cloud-gpu/target/spin-http-js.wasm _dist/fermyon-cloud-gpu/target/spin-http-js.wasm
+          cd _dist
+          tar czf cloud-gpu-${{ env.RELEASE_VERSION }}-${{ env.RUNNER_OS }}-${{ matrix.config.arch }}.tar.gz cloud-gpu.license cloud-gpu${{ matrix.config.extension }} fermyon-cloud-gpu/spin.toml fermyon-cloud-gpu/target/spin-http-js.wasm
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
