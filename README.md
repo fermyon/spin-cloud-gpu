@@ -6,7 +6,7 @@ Ever tested your AI-powered Spin app locally and spent quite a while waiting for
 
 ### How it works
 
-The `spin cloud-gpu` plugin, will be deploying a Spin application to Fermyon Cloud on your behalf that will serve as a proxy to access GPUs for your local Spin application. With the `spin cloud-gpu connect` command, you'll connect this proxy to your desired local application. You can always delete the proxy either via Fermyon Cloud UI or via `spin cloud-gpu destroy`. Read on to learn more about the prerequisites and the specific commands. 
+The `spin cloud-gpu` plugin, will be deploying a Spin application to Fermyon Cloud on your behalf that will serve as a proxy to access GPUs for your local Spin application. With the `spin cloud-gpu init` command, you'll implicitly deploy a Fermyon Cloud Spin application that will act as a proxy to access Fermyon Cloud GPUs from your local SPin application. You can always delete the proxy either via Fermyon Cloud UI or via `spin cloud-gpu destroy`. Read on to learn more about the prerequisites and the specific commands. 
 
 ## Prerequisites 
 
@@ -27,11 +27,18 @@ Build and install the plugin:
 
 ## Functionality
 
-`spin cloud-gpu init` - deploy the fermyon-cloud-gpu Spin app to act as a cloud GPU proxy.
+`spin cloud-gpu init` - deploy the fermyon-cloud-gpu Spin app to act as a cloud GPU proxy and generates a runtime-config file.
 ![](/img/spin-cloud-gpu-init.png)
 
-`spin cloud-gpu connect` - connect to the fermyon-cloud-gpu Spin app to proxy your GPU. It is important you run this command from the local Spin application directory
-![](/img/spin-cloud-gpu-connect.png)
+> Note that you must have this section added to your `runtime-config.toml` file:
+```toml
+[llm_compute]
+type = "remote_http"
+url = "https://fermyon-cloud-gpu-<AUTO_GENERATED_STRING>.fermyon.app"
+auth_token = "<AUTO_GENERATED_TOKEN>"
+```
+
+Once you're ready to run your application locally with `spin --up`, make sure to pass the following arugment: `--runtime-config-file <path/to/runtime/config>`
 
 `spin cloud-gpu destroy` - deletes the fermyon-cloud-gpu Spin application
 ![](/img/spin-cloud-gpu-destroy.png)
@@ -49,7 +56,6 @@ OPTIONS:
     -V, --version    Print version information
 
 SUBCOMMANDS:
-    connect    Connect to the fermyon-cloud-gpu Spin app to proxy your GPU
     destroy    Destroy the fermyon-cloud-gpu Spin app
     help       Print this message or the help of the given subcommand(s)
     init       Deploy the fermyon-cloud-gpu Spin app to act as a cloud GPU proxy
