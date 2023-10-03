@@ -13,6 +13,17 @@ cd ..
 cp target/release/spin-cloud-gpu cloud-gpu 
 tar -czvf cloud-gpu.tar.gz cloud-gpu fermyon-cloud-gpu/spin.toml fermyon-cloud-gpu/target/spin-http-js.wasm
 
+case "$OSTYPE" in
+    darwin*) OSLABEL="mac" ;;
+    linux*) OSLABEL="linux" ;;
+    msys*) OSLABEL="windows" ;;
+esac
+
+case $(uname -m) in
+    x86_64) ARCH="amd64" ;;
+    *)    ARCH="aarch64" ;;
+esac
+
 # Create the plugin manifest
 cat <<EOT > cloud-gpu.json
 {
@@ -24,8 +35,8 @@ cat <<EOT > cloud-gpu.json
     "license": "Apache-2.0",
     "packages": [
         {
-            "os": "macos",
-            "arch": "aarch64",
+            "os": "$OSLABEL",
+            "arch": "$ARCH",
             "url": "file:$(pwd)/cloud-gpu.tar.gz",
             "sha256": "$(sha256sum cloud-gpu.tar.gz | awk '{print $1;}')"
         }
