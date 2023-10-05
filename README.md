@@ -33,7 +33,7 @@ To build the plugin locally and install it which can be useful for local develop
 
 ## Functionality
 
-`spin cloud-gpu init` - deploy the fermyon-cloud-gpu Spin app to act as a cloud GPU proxy and generates a runtime-config file.
+`spin cloud-gpu init` - deploy the fermyon-cloud-gpu Spin app to act as a cloud GPU proxy and generates a runtime-config. The runtime-config needs to be copied into a file.
 ![](/img/spin-cloud-gpu-init.png)
 
 > Note that you must have this section added to your `runtime-config.toml` file:
@@ -44,7 +44,7 @@ url = "https://fermyon-cloud-gpu-<AUTO_GENERATED_STRING>.fermyon.app"
 auth_token = "<AUTO_GENERATED_TOKEN>"
 ```
 
-Once you're ready to run your application locally with `spin --up`, make sure to pass the following arugment: `--runtime-config-file <path/to/runtime/config>`
+Once you're ready to run your application locally with `spin up`, make sure to pass the following arugment: `--runtime-config-file <path/to/runtime/config>`
 
 `spin cloud-gpu destroy` - deletes the fermyon-cloud-gpu Spin application
 ![](/img/spin-cloud-gpu-destroy.png)
