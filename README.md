@@ -19,7 +19,13 @@ The `spin cloud-gpu` plugin, will be deploying a Spin application to Fermyon Clo
 
 ## Installation Steps
 
-Build and install the plugin:
+The following command can be used to install the plugin:
+
+```sh
+spin plugins install -u https://github.com/fermyon/spin-cloud-gpu/releases/download/canary/cloud-gpu.json -y
+```
+
+To build the plugin locally and install it which can be useful for local development, use the following command:
 
 ```sh
 ./create_plugin.sh && spin plugins install -f cloud-gpu.json -y
