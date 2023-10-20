@@ -135,6 +135,14 @@ jobs:
         with:
             name: cloud-gpu-${{ env.RELEASE_VERSION }}-${{ env.RUNNER_OS }}-${{ matrix.config.arch }}.tar.gz
             path: _dist/cloud-gpu-${{ env.RELEASE_VERSION }}-${{ env.RUNNER_OS }}-${{ matrix.config.arch }}.tar.gz
+      
+      - name: upload binary to Github release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: _dist/cloud-gpu-${{ env.RELEASE_VERSION }}-${{ env.RUNNER_OS }}-${{ matrix.config.arch }}.tar.gz
+          tag: ${{ github.ref }}
 
   checksums_and_manifests:
     name: generate checksums
@@ -164,18 +172,33 @@ jobs:
         shell: bash
         run: bash .plugin-manifests/generate-manifest.sh ${{ env.RELEASE_VERSION }} checksums-${{ env.RELEASE_VERSION }}.txt > cloud-gpu.json
 
-      - name: Upload checksums
+      - name: Upload manifest
         uses: actions/upload-artifact@v3
         with:
           name: cloud-gpu.json
           path: cloud-gpu.json
 
-      - name: Upload plugin manifest
+      - name: upload plugin manifest to release
+        uses: svenstaro/upload-release-action@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: cloud-gpu.json
+          tag: ${{ github.ref }}
+
+      - name: Upload plugin checksum
         uses: actions/upload-artifact@v3
         with:
             name: checksums-${{ env.RELEASE_VERSION }}.txt
             path: checksums-${{ env.RELEASE_VERSION }}.txt
-
+      
+      - name: upload plugin manifest to release
+        uses: svenstaro/upload-release-action@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: checksums-${{ env.RELEASE_VERSION }}.txt
+          tag: ${{ github.ref }}
 
   update-canary:
     name: update canary release
