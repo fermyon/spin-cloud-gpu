@@ -88,6 +88,12 @@ router.post("/infer", (_, req) => {
 router.post("/embed", (_, req) => {
   return embed(req);
 });
+// Catch all 404
+router.all("*", () => {
+  return {
+    status: 404
+  }
+})
 
 // Entrypoint to Spin app
 export const handleRequest: HandleRequest = async function (
