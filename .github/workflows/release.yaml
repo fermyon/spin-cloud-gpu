@@ -184,7 +184,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           upload_checksums: true
-          manifest_file: .plugin-manifests/.spin-plugin.json.tmpl
+          template_file: .plugin-manifests/.spin-plugin.json.tmpl
 
       
 
