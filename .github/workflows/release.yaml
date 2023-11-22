@@ -133,7 +133,7 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
         with:
-            name: cloud-gpu-${{ env.RELEASE_VERSION }}-${{ env.RUNNER_OS }}-${{ matrix.config.arch }}.tar.gz
+            name: cloud-gpu
             path: _dist/cloud-gpu-${{ env.RELEASE_VERSION }}-${{ env.RUNNER_OS }}-${{ matrix.config.arch }}.tar.gz
       
       - name: upload binary to Github release
@@ -152,6 +152,8 @@ jobs:
     steps:
       - name: Download release assets
         uses: actions/download-artifact@v3
+        with:
+          name: cloud-gpu
 
       - name: Delete canary tag
         uses: dev-drprasad/delete-tag-and-release@v0.2.1
@@ -185,7 +187,3 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           upload_checksums: true
           template_file: .plugin-manifests/.spin-plugin.json.tmpl
-
-      
-
- 
