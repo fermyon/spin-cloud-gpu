@@ -175,6 +175,12 @@ jobs:
             This is a "canary" release of the most recent commits on our main branch. Canary is **not stable**.
             It is only intended for developers wishing to try out the latest features in the spin-cloud-gpu plugin
 
+      ## a lot of times we have seen that the canary release is left marked as draft
+      ## which is most likely due to some bug in ncipollo/release-action or some unknown misconfiguration on our side
+      ## the following command ensure canary release is not marked as draft release
+      - name: Ensure release is not marked as draft
+        run: gh release edit canary --repo fermyon/spin-cloud-gpu --draft=false
+
   spin-plugin-release:
     name: Release spin plugin
     runs-on: ubuntu-latest
