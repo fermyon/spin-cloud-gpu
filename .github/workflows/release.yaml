@@ -180,6 +180,8 @@ jobs:
       ## the following command ensure canary release is not marked as draft release
       - name: Ensure release is not marked as draft
         run: gh release edit canary --repo fermyon/spin-cloud-gpu --draft=false
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   spin-plugin-release:
     name: Release spin plugin
