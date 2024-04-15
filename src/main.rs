@@ -19,8 +19,6 @@ const VERSION: &str = concat!(
 pub enum App {
     /// Deploy the fermyon-cloud-gpu Spin app to act as a cloud GPU proxy.
     Init,
-    /// Create credentials to connect to the fermyon-cloud-gpu Spin app.
-    // Connect,
     /// Destroy the fermyon-cloud-gpu Spin app.
     Destroy,
 }
