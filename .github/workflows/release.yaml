@@ -38,7 +38,7 @@ jobs:
             targetDir: "target/aarch64-unknown-linux-gnu/release",
           }
           - {
-              os: "macos-latest",
+              os: "macos-13",
               arch: "amd64",
               extension: "",
               buildArgs: "",
@@ -46,12 +46,12 @@ jobs:
               targetDir: "target/release",
             }
           - {
-              os: "macos-latest",
+              os: "macos-14",
               arch: "aarch64",
               extension: "",
-              buildArgs: "--target aarch64-apple-darwin",
-              target: "aarch64-apple-darwin",
-              targetDir: "target/aarch64-apple-darwin/release/",
+              buildArgs: "",
+              target: "",
+              targetDir: "target/release",
             }
           - {
               os: "windows-latest",
