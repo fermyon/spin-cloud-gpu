@@ -131,9 +131,9 @@ jobs:
           tar czf cloud-gpu-${{ env.RELEASE_VERSION }}-${{ env.RUNNER_OS }}-${{ matrix.config.arch }}.tar.gz cloud-gpu.license cloud-gpu${{ matrix.config.extension }} fermyon-cloud-gpu/spin.toml fermyon-cloud-gpu/target/spin-http-js.wasm
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-            name: cloud-gpu
+            name: cloud-gpu-${{ env.RUNNER_OS }}-${{ matrix.config.arch }}
             path: _dist/cloud-gpu-${{ env.RELEASE_VERSION }}-${{ env.RUNNER_OS }}-${{ matrix.config.arch }}.tar.gz
       
       - name: upload binary to Github release
@@ -151,9 +151,10 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Download release assets
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: cloud-gpu
+          pattern: cloud-gpu-*
+          merge-multiple: true
 
       - name: Delete canary tag
         uses: dev-drprasad/delete-tag-and-release@v0.2.1
