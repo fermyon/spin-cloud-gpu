@@ -9,6 +9,7 @@ clap = { version = "3.2.24", features = ["derive", "env"] }
 regex = "1.4"
 tracing = { version = "0.1", features = ["log"] }
 uuid = { version = "1.4.1", features = ["v4"] }
+time = "0.3.36"
 
 [build-dependencies]
 vergen = { version = "^8.2.1", default-features = false, features = [
