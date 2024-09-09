@@ -83,6 +83,7 @@ jobs:
         uses: fermyon/actions/spin/setup@v1
         with:
           plugins: js2wasm
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: build fermyon-cloud-gpu
         shell: bash
