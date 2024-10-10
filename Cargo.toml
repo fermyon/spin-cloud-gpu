@@ -10,6 +10,7 @@ regex = "1.4"
 tracing = { version = "0.1", features = ["log"] }
 uuid = { version = "1.4.1", features = ["v4"] }
 time = "0.3.36"
+dialoguer = "0.11.0"
 
 [build-dependencies]
 vergen = { version = "^8.2.1", default-features = false, features = [

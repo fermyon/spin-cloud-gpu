@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Result};
 use clap::Parser;
+use dialoguer::Confirm;
 use regex::Regex;
 use std::process::Command as Cmd;
 use uuid::Uuid;
@@ -17,22 +18,25 @@ const VERSION: &str = concat!(
 #[derive(Debug, Parser)]
 #[clap(name = "spin cloud-gpu", version = VERSION)]
 pub enum App {
-    /// Deploy the fermyon-cloud-gpu Spin app to act as a cloud GPU proxy.
+    /// Deploy the Fermyon Cloud GPU Spin App to act as a cloud GPU proxy.
     Init,
-    /// Destroy the fermyon-cloud-gpu Spin app.
+    /// Rotate the Auth Token for your existing Fermyon Cloud GPU
+    RotateAuthToken,
+    /// Destroy the Fermyon Cloud GPU Spin App.
     Destroy,
 }
 
 fn main() -> Result<(), anyhow::Error> {
     match App::parse() {
         App::Init => init(),
+        App::RotateAuthToken => rotate_auth_token(),
         // App::Connect => connect(),
         App::Destroy => destroy(),
     }
 }
 
 fn init() -> Result<(), anyhow::Error> {
-    println!("Deploying fermyon-cloud-gpu Spin app ...");
+    println!("Deploying Fermyon Cloud GPU Spin App ...");
 
     let auth_token = generate_auth_token();
 
@@ -46,7 +50,7 @@ fn init() -> Result<(), anyhow::Error> {
 
     if !result.status.success() {
         return Err(anyhow!(
-            "Failed to deploy fermyon-cloud-gpu: {}",
+            "Failed to deploy Fermyon Cloud GPU: {}",
             String::from_utf8_lossy(&result.stderr)
         ));
     }
@@ -58,6 +62,44 @@ fn init() -> Result<(), anyhow::Error> {
 
     print_runtime_config(url, auth_token);
 
+    Ok(())
+}
+
+fn rotate_auth_token() -> Result<(), anyhow::Error> {
+    let confirmation = Confirm::new()
+        .with_prompt("Do you really want to rotate the Auth Token for Fermyon Cloud GPU? (Existing Spin Apps using your instance of Fermyon Cloud GPU must be updated)")
+        .interact()
+        .unwrap();
+
+    if !confirmation {
+        println!("Operation canceled! Auth Token for Fermyon Cloud GPU has not been rotated.");
+        return Ok(());
+    }
+
+    let auth_token = generate_auth_token();
+    let result = Cmd::new(spin_bin_path()?)
+        .arg("cloud")
+        .arg("variables")
+        .arg("set")
+        .arg("--app")
+        .arg("fermyon-cloud-gpu")
+        .arg(format!("auth_token={auth_token}"))
+        .output()?;
+
+    if !result.status.success() {
+        return Err(anyhow!(
+            "Failed to update Auth Token for Fermyon Cloud GPU: {}",
+            String::from_utf8_lossy(&result.stderr)
+        ));
+    }
+
+    let url = match extract_url(&String::from_utf8_lossy(&result.stdout)) {
+        Ok(val) => val,
+        Err(_) => "<Insert url from cloud dashboard>".to_owned(),
+    };
+
+    println!("\nAuth Token for Fermyon Cloud GPU rotated!\n");
+    print_runtime_config(url, auth_token);
     Ok(())
 }
 
@@ -88,7 +130,7 @@ fn init() -> Result<(), anyhow::Error> {
 // }
 
 fn destroy() -> Result<(), anyhow::Error> {
-    println!("Destroying fermyon-cloud-gpu Spin app ...");
+    println!("Destroying Fermyon Cloud GPU Spin App ...");
 
     let result = Cmd::new(spin_bin_path()?)
         .arg("cloud")
@@ -99,7 +141,7 @@ fn destroy() -> Result<(), anyhow::Error> {
 
     if !result.status.success() {
         return Err(anyhow!(
-            "Failed to delete fermyon-cloud-gpu: {}",
+            "Failed to delete Fermyon Cloud GPU: {}",
             String::from_utf8_lossy(&result.stderr)
         ));
     }
