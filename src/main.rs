@@ -21,7 +21,7 @@ pub enum App {
     /// Deploy the Fermyon Cloud GPU Spin App to act as a cloud GPU proxy.
     Init,
     /// Rotate the Auth Token for your existing Fermyon Cloud GPU
-    RotateAuthToken,
+    RotateToken,
     /// Destroy the Fermyon Cloud GPU Spin App.
     Destroy,
 }
