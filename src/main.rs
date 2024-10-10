@@ -29,7 +29,7 @@ pub enum App {
 fn main() -> Result<(), anyhow::Error> {
     match App::parse() {
         App::Init => init(),
-        App::RotateAuthToken => rotate_auth_token(),
+        App::RotateToken => rotate_auth_token(),
         // App::Connect => connect(),
         App::Destroy => destroy(),
     }
