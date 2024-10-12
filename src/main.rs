@@ -21,15 +21,21 @@ pub enum App {
     /// Deploy the Fermyon Cloud GPU Spin App to act as a cloud GPU proxy.
     Init,
     /// Rotate the Auth Token for your existing Fermyon Cloud GPU
-    RotateToken,
+    RotateToken(RotateOptions),
     /// Destroy the Fermyon Cloud GPU Spin App.
     Destroy,
+}
+
+#[derive(Debug, Parser)]
+pub struct RotateOptions {
+    #[clap(long = "yes", short = 'y', takes_value = false)]
+    pub yes: bool,
 }
 
 fn main() -> Result<(), anyhow::Error> {
     match App::parse() {
         App::Init => init(),
-        App::RotateToken => rotate_auth_token(),
+        App::RotateToken(options) => rotate_auth_token(options),
         // App::Connect => connect(),
         App::Destroy => destroy(),
     }
@@ -65,15 +71,17 @@ fn init() -> Result<(), anyhow::Error> {
     Ok(())
 }
 
-fn rotate_auth_token() -> Result<(), anyhow::Error> {
-    let confirmation = Confirm::new()
-        .with_prompt("Do you really want to rotate the Auth Token for Fermyon Cloud GPU? (Existing Spin Apps using your instance of Fermyon Cloud GPU must be updated)")
-        .interact()
-        .unwrap();
+fn rotate_auth_token(options: RotateOptions) -> Result<(), anyhow::Error> {
+    if !options.yes {
+        let confirmation = Confirm::new()
+            .with_prompt("Do you really want to rotate the Auth Token for Fermyon Cloud GPU? (Existing Spin Apps using your instance of Fermyon Cloud GPU must be updated)")
+            .interact()
+            .unwrap();
 
-    if !confirmation {
-        println!("Operation canceled! Auth Token for Fermyon Cloud GPU has not been rotated.");
-        return Ok(());
+        if !confirmation {
+            println!("Operation canceled! Auth Token for Fermyon Cloud GPU has not been rotated.");
+            return Ok(());
+        }
     }
 
     let auth_token = generate_auth_token();
