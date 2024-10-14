@@ -14,7 +14,7 @@ cp target/release/spin-cloud-gpu cloud-gpu
 tar -czvf cloud-gpu.tar.gz cloud-gpu fermyon-cloud-gpu/spin.toml fermyon-cloud-gpu/target/spin-http-js.wasm
 
 case "$OSTYPE" in
-    darwin*) OSLABEL="mac" ;;
+    darwin*) OSLABEL="macos" ;;
     linux*) OSLABEL="linux" ;;
     msys*) OSLABEL="windows" ;;
 esac
