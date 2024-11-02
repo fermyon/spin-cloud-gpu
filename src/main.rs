@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 use clap::Parser;
 use cloud_gpu_info::CloudGpuInfo;
 use dialoguer::Confirm;
-use std::process::Command as Cmd;
+use std::{process::Command as Cmd, str::FromStr};
 use uuid::Uuid;
 
 mod cloud_gpu_info;
@@ -30,24 +30,37 @@ pub enum App {
 
 #[derive(Debug, Parser)]
 pub struct RotateOptions {
+    /// Automatically confirm token rotation
     #[clap(long = "yes", short = 'y', takes_value = false)]
     pub yes: bool,
-    /// Print output as JSON
-    #[clap(long = "json", conflicts_with = "toml")]
-    json: bool,
-    /// Print output as TOML
-    #[clap(long = "toml", conflicts_with = "json")]
-    toml: bool,
+    /// Print formatted output. Supported formats are json and toml
+    #[clap(long = "format")]
+    pub format: Option<OutputFormat>,
+}
+
+#[derive(Debug, Parser)]
+pub enum OutputFormat {
+    Json,
+    Toml,
+}
+
+impl FromStr for OutputFormat {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "json" => Ok(OutputFormat::Json),
+            "toml" => Ok(OutputFormat::Toml),
+            _ => anyhow::bail!("Invalid format provided. Valid formats are toml and json"),
+        }
+    }
 }
 
 #[derive(Parser, Debug)]
 pub struct InitOptions {
-    /// Print output as JSON
-    #[clap(long = "json", conflicts_with = "toml")]
-    json: bool,
-    /// Print output as TOML
-    #[clap(long = "toml", conflicts_with = "json")]
-    toml: bool,
+    /// Print formatted output. Supported formats are json and toml
+    #[clap(long = "format")]
+    pub format: Option<OutputFormat>,
 }
 
 fn main() -> Result<(), anyhow::Error> {
@@ -81,7 +94,7 @@ fn init(options: InitOptions) -> Result<(), anyhow::Error> {
     let url = &String::from_utf8_lossy(&result.stdout);
 
     let info = CloudGpuInfo::new(auth_token, url);
-    info.print(options.json, options.toml);
+    info.print(options.format);
     Ok(())
 }
 
@@ -119,7 +132,7 @@ fn rotate_auth_token(options: RotateOptions) -> Result<(), anyhow::Error> {
 
     let info = CloudGpuInfo::new(auth_token, url);
     eprintln!("\nAuth Token for Fermyon Cloud GPU rotated!\n");
-    info.print(options.json, options.toml);
+    info.print(options.format);
     Ok(())
 }
 
@@ -160,29 +173,3 @@ fn spin_toml_path() -> Result<String> {
         .to_owned()
         + "/fermyon-cloud-gpu/spin.toml")
 }
-
-// fn connect() -> Result<(), anyhow::Error> {
-//     println!("Connecting to fermyon-cloud-gpu Spin app ...");
-
-//     let auth_token = generate_auth_token();
-
-//     let result = Cmd::new(spin_bin_path()?)
-//         .arg("cloud")
-//         .arg("variables")
-//         .arg("set")
-//         .arg(format!("auth_token={auth_token}"))
-//         .arg("--app")
-//         .arg("fermyon-cloud-gpu")
-//         .output()?;
-
-//     if !result.status.success() {
-//         return Err(anyhow!(
-//             "Failed to update auth_token in fermyon-cloud-gpu: {}",
-//             String::from_utf8_lossy(&result.stderr)
-//         ));
-//     }
-
-//     print_runtime_config(auth_token);
-
-//     Ok(())
-// }

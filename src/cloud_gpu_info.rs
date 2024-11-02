@@ -1,6 +1,8 @@
 use regex::Regex;
 use serde::Serialize;
 
+use crate::OutputFormat;
+
 const FALLBACK_URL: &str = "<Insert url from Fermyon Cloud dashboard>";
 
 #[derive(Serialize)]
@@ -29,13 +31,13 @@ impl CloudGpuInfo {
         }
     }
 
-    pub(crate) fn print(&self, json: bool, toml: bool) {
+    pub(crate) fn print(&self, format: Option<OutputFormat>) {
         println!(
             "{}",
-            match (json, toml) {
-                (true, false) => self.to_json(),
-                (false, true) => self.to_toml(),
-                (_, _) => self.to_string(),
+            match format {
+                Some(OutputFormat::Json) => self.to_json(),
+                Some(OutputFormat::Toml) => self.to_toml(),
+                None => self.to_string(),
             }
         )
     }
