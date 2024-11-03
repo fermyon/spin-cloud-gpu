@@ -1,9 +1,11 @@
 use anyhow::{anyhow, Result};
 use clap::Parser;
+use cloud_gpu_info::CloudGpuInfo;
 use dialoguer::Confirm;
-use regex::Regex;
-use std::process::Command as Cmd;
+use std::{process::Command as Cmd, str::FromStr};
 use uuid::Uuid;
+
+mod cloud_gpu_info;
 
 /// Returns build information, similar to: 0.1.0 (2be4034 2022-03-31).
 const VERSION: &str = concat!(
@@ -19,7 +21,7 @@ const VERSION: &str = concat!(
 #[clap(name = "spin cloud-gpu", version = VERSION)]
 pub enum App {
     /// Deploy the Fermyon Cloud GPU Spin App to act as a cloud GPU proxy.
-    Init,
+    Init(InitOptions),
     /// Rotate the Auth Token for your existing Fermyon Cloud GPU
     RotateToken(RotateOptions),
     /// Destroy the Fermyon Cloud GPU Spin App.
@@ -28,21 +30,50 @@ pub enum App {
 
 #[derive(Debug, Parser)]
 pub struct RotateOptions {
+    /// Automatically confirm token rotation
     #[clap(long = "yes", short = 'y', takes_value = false)]
     pub yes: bool,
+    /// Print formatted output. Supported formats are json and toml
+    #[clap(long = "format")]
+    pub format: Option<OutputFormat>,
+}
+
+#[derive(Debug, Parser)]
+pub enum OutputFormat {
+    Json,
+    Toml,
+}
+
+impl FromStr for OutputFormat {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "json" => Ok(OutputFormat::Json),
+            "toml" => Ok(OutputFormat::Toml),
+            _ => anyhow::bail!("Invalid format provided. Valid formats are toml and json"),
+        }
+    }
+}
+
+#[derive(Parser, Debug)]
+pub struct InitOptions {
+    /// Print formatted output. Supported formats are json and toml
+    #[clap(long = "format")]
+    pub format: Option<OutputFormat>,
 }
 
 fn main() -> Result<(), anyhow::Error> {
     match App::parse() {
-        App::Init => init(),
+        App::Init(options) => init(options),
         App::RotateToken(options) => rotate_auth_token(options),
         // App::Connect => connect(),
         App::Destroy => destroy(),
     }
 }
 
-fn init() -> Result<(), anyhow::Error> {
-    println!("Deploying Fermyon Cloud GPU Spin App ...");
+fn init(options: InitOptions) -> Result<(), anyhow::Error> {
+    eprintln!("Deploying Fermyon Cloud GPU Spin App ...");
 
     let auth_token = generate_auth_token();
 
@@ -60,26 +91,23 @@ fn init() -> Result<(), anyhow::Error> {
             String::from_utf8_lossy(&result.stderr)
         ));
     }
+    let url = &String::from_utf8_lossy(&result.stdout);
 
-    let url = match extract_url(&String::from_utf8_lossy(&result.stdout)) {
-        Ok(val) => val,
-        Err(_) => "<Insert url from cloud dashboard>".to_owned(),
-    };
-
-    print_runtime_config(url, auth_token);
-
+    let info = CloudGpuInfo::new(auth_token, url);
+    info.print(options.format);
     Ok(())
 }
 
 fn rotate_auth_token(options: RotateOptions) -> Result<(), anyhow::Error> {
     if !options.yes {
         let confirmation = Confirm::new()
-            .with_prompt("Do you really want to rotate the Auth Token for Fermyon Cloud GPU? (Existing Spin Apps using your instance of Fermyon Cloud GPU must be updated)")
+            .default(false)
+        .with_prompt("Do you really want to rotate the Auth Token for Fermyon Cloud GPU? (Existing Spin Apps using your instance of Fermyon Cloud GPU must be updated)")
             .interact()
             .unwrap();
 
         if !confirmation {
-            println!("Operation canceled! Auth Token for Fermyon Cloud GPU has not been rotated.");
+            eprintln!("Operation canceled! Auth Token for Fermyon Cloud GPU has not been rotated.");
             return Ok(());
         }
     }
@@ -100,45 +128,16 @@ fn rotate_auth_token(options: RotateOptions) -> Result<(), anyhow::Error> {
             String::from_utf8_lossy(&result.stderr)
         ));
     }
+    let url = &String::from_utf8_lossy(&result.stdout);
 
-    let url = match extract_url(&String::from_utf8_lossy(&result.stdout)) {
-        Ok(val) => val,
-        Err(_) => "<Insert url from cloud dashboard>".to_owned(),
-    };
-
-    println!("\nAuth Token for Fermyon Cloud GPU rotated!\n");
-    print_runtime_config(url, auth_token);
+    let info = CloudGpuInfo::new(auth_token, url);
+    eprintln!("\nAuth Token for Fermyon Cloud GPU rotated!\n");
+    info.print(options.format);
     Ok(())
 }
 
-// fn connect() -> Result<(), anyhow::Error> {
-//     println!("Connecting to fermyon-cloud-gpu Spin app ...");
-
-//     let auth_token = generate_auth_token();
-
-//     let result = Cmd::new(spin_bin_path()?)
-//         .arg("cloud")
-//         .arg("variables")
-//         .arg("set")
-//         .arg(format!("auth_token={auth_token}"))
-//         .arg("--app")
-//         .arg("fermyon-cloud-gpu")
-//         .output()?;
-
-//     if !result.status.success() {
-//         return Err(anyhow!(
-//             "Failed to update auth_token in fermyon-cloud-gpu: {}",
-//             String::from_utf8_lossy(&result.stderr)
-//         ));
-//     }
-
-//     print_runtime_config(auth_token);
-
-//     Ok(())
-// }
-
 fn destroy() -> Result<(), anyhow::Error> {
-    println!("Destroying Fermyon Cloud GPU Spin App ...");
+    eprintln!("Destroying Fermyon Cloud GPU Spin App ...");
 
     let result = Cmd::new(spin_bin_path()?)
         .arg("cloud")
@@ -153,7 +152,6 @@ fn destroy() -> Result<(), anyhow::Error> {
             String::from_utf8_lossy(&result.stderr)
         ));
     }
-
     Ok(())
 }
 
@@ -174,26 +172,4 @@ fn spin_toml_path() -> Result<String> {
         .ok_or(anyhow!("Could not get parent dir of executable"))?
         .to_owned()
         + "/fermyon-cloud-gpu/spin.toml")
-}
-
-fn print_runtime_config(url: String, auth_token: String) {
-    println!("Add the following configuration to your runtime configuration file.");
-    println!(
-        r#"
-[llm_compute]
-type = "remote_http"
-url = "{url}"
-auth_token = "{auth_token}"
-"#
-    );
-    println!("\nOnce added, you can spin up with the following argument --runtime-config-file <path/to/runtime/config>.");
-}
-
-fn extract_url(input: &str) -> Result<String> {
-    let re = Regex::new(r"fermyon-cloud-gpu: (https://[^\s]+)")?;
-    if let Some(captures) = re.captures(input) {
-        Ok(captures[1].to_string())
-    } else {
-        Err(anyhow!("Failed to extra url"))
-    }
 }
