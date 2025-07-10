@@ -13,13 +13,21 @@ pub(crate) struct CloudGpuInfo {
 }
 
 fn extract_url(input: &str) -> String {
-    let Ok(re) = Regex::new(r"fermyon-cloud-gpu: (https://[^\s]+)") else {
+    let Ok(re_new) = Regex::new(r"View application:   (https://[^\s]+)") else {
         return String::from(FALLBACK_URL);
     };
-    let Some(captures) = re.captures(input) else {
+    if let Some(captures) = re_new.captures(input) {
+        return captures[1].to_string();
+    }
+
+    let Ok(re_old) = Regex::new(r"fermyon-cloud-gpu: (https://[^\s]+)") else {
         return String::from(FALLBACK_URL);
     };
-    captures[1].to_string()
+    if let Some(captures) = re_old.captures(input) {
+        return captures[1].to_string();
+    };
+
+    String::from(FALLBACK_URL)
 }
 
 impl CloudGpuInfo {
